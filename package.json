@@ -1,0 +1,23 @@
+{
+  "author": {
+    "name": "Craig Monro",
+    "email": "cmroanirgo@gmail.com"
+  },
+  "name": "pl-copyfind",
+  "version": "0.0.9",
+  "description": "ideas are based on those found at plagiarism.bloomfieldmedia.com's CopyFind/WCopyFind",
+  "main": "index.js",
+  "directories": {
+    "lib": "./lib"
+  },
+ "dependencies": {
+    "underscore" : "latest"
+  },
+
+  "scripts": {
+    "test": "node tests/test1.js > tests/test1.html",
+    "test2": "node tests/test2.js",
+    "test:words" : "node tests/words1.js"
+  },
+  "license": "MIT"
+}
