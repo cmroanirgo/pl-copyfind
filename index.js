@@ -15,6 +15,7 @@
 
 var _ = require("underscore");
 var wordlib = require("./lib/words");
+var TextReader = require("./lib/TextReader");
 
 ;(function() {
 
@@ -24,19 +25,42 @@ var wordlib = require("./lib/words");
 
 	/*
 	USAGE:
-		textL: txt (the original), or an array of texts (see matches[n].textL.index to determine what matches made)
+		textL: txt (the original), or an array of texts 
 		textR: txt (the 'other'), or an array
 		options: { } // see 'defaultOptions' below
 		callback: function(err, data) { 
 			if (err) throw "An error occurred: " + err.message;
 			// where data contains:
-			// data.hashesL: {} cacheable object data for re-use. put this in options to re-use
-			// data.hashesR: {}  ''
-			// data.matches: [
+			data.hashesL: {} cacheable object data for re-use. put this in options to re-use
+			data.hashesR: {}  ''
+			// matches is a 2 dimensioned array
+			data.matches[0][0]: [  // first index is array of 'left texts', 2nd index is 'right texts' 
 					{ 
-						textL { index:0; pos: 0..n, len: 0..n } 
-						textR { index:0; pos: 0..n, len: 0..n } 
-				]
+						textL { pos: 0..n, length: 0..n, wordCount: 0..n } 
+						textR { pos: 0..n, length: 0..n, wordCount: 0..n } 
+					}
+			]
+			//... if however, the source textL and textR are NOT arrays, then data.matches is reduced accordingly:
+			data.matches: [  
+					{ 
+						textL { pos: 0..n, length: 0..n, wordCount: 0..n } 
+						textR { pos: 0..n, length: 0..n, wordCount: 0..n } 
+					}
+			]
+			data.html:  
+				// this is available when options.bBuildReport = true
+				// contains html "inner" text. You need to add styling and body tags. eg:
+					<!DOCTYPE html>
+					<html><head><meta charset="UTF-8"><style>html,body { height:100%;}
+					.doc { display:inline-block;width:45%; overflow:scroll;height:90%;max-height: 100%; border:1px solid #888; margin:1em 1%;padding:1em;} 
+					.match { color:#ff0000 } .match-partial { color:#007F00 }
+					</style></head><body>
+
+			data.executionTime: // in milliseconds
+
+	
+
+
 		}
 
 		)
@@ -49,147 +73,18 @@ var wordlib = require("./lib/words");
 			MismatchTolerance: 2, // #Most Imperfections to Allow
 			MismatchPercentage: 80, // Minimum % of Matching Words
 
-			bBriefReport: false,
 			bIgnoreCase: false, // Ignore Letter Case
 			bIgnoreNumbers: false, // Ignore Numbers
 			bIgnoreOuterPunctuation: false, // Ignore Outer Punctuation
 			bIgnorePunctuation: false, // Ignore Punctuation
 			bSkipLongWords: false, // Skip Long Words
 			bSkipNonwords: false, // Skip Non-Words
-			bBasic_Characters: false
+
+			bBuildReport: true,
+			bBriefReport: true
+			// , bTerseReport: false // show ONLY the matching text
 	};
 
-	// delimiter types
-	var DEL_TYPE_NONE 		= 0;
-	var DEL_TYPE_WHITE 		= 1;
-	var DEL_TYPE_NEWLINE 	= 2;
-	var DEL_TYPE_EOF 		= 3;
-
-	function isspace(ch) { return /[ \f\n\r\t\v\u00A0\u2028\u2029]/.test(ch); } // better cross browser stability than /\s/.  (IE <> firefox)
-	function iscntrl(ch) { ch = ch.charCodeAt(0); return (ch>0 && ch < 0x1F) || (ch == 0xff) || (ch == 0x7f); }
-
-	var TextReader = function(text) { // similar to InputDocument.cpp
-			this._text = text; 
-			this._textpos = 0;
-			this._gotWord = false;
-			this._gotDelimiter = false;
-			this._gotChar = false;
-			this._char = '';
-			this._delimiterType = DEL_TYPE_NONE;
-	}
-	TextReader.prototype.constructor = TextReader;
-	TextReader.prototype.isFinished = function() { return this._delimiterType == DEL_TYPE_EOF; }
-
-	TextReader.prototype.getCharTxt = function() {
-/*
-			// from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/charAt 'getWholeChar'
-			function getWholeCharAndI(str, i) {
-			  var code = str.charCodeAt(i);
-
-			  if (isNaN(code)) {
-			    return ''; // Position not found
-			  }
-			  if (code < 0xD800 || code > 0xDFFF) {
-			    return [str.charAt(i), i]; // Normal character, keeping 'i' the same
-			  }
-
-			  // High surrogate (could change last hex to 0xDB7F to treat high private 
-			  // surrogates as single characters)
-			  if (0xD800 <= code && code <= 0xDBFF) {
-			    if (str.length <= (i + 1)) {
-			      return ''; //throw 'High surrogate without following low surrogate';
-			    }
-			    var next = str.charCodeAt(i + 1);
-			      if (0xDC00 > next || next > 0xDFFF) {
-			        return ''; //throw 'High surrogate without following low surrogate';
-			      }
-			      return [str.charAt(i) + str.charAt(i + 1), i + 1];
-			  }
-			  // Low surrogate (0xDC00 <= code && code <= 0xDFFF)
-			  if (i === 0) {
-			    return ''; //throw 'Low surrogate without preceding high surrogate';
-			  }
-			  var prev = str.charCodeAt(i - 1);
-
-			  // (could change last hex to 0xDB7F to treat high private surrogates
-			  // as single characters)
-			  if (0xD800 > prev || prev > 0xDBFF) {
-			    return ''; //throw 'Low surrogate without preceding high surrogate';
-			  }
-			  // Return the next character instead (and increment)
-			  return [str.charAt(i + 1), i + 1];
-			}
-			if (this._textpos<this._text.length)
-			{
-				var ci = getWholeCharAndI(this._text, this._textpos);
-				if (!_.isArray(ci))
-					return -1;
-				this._textpos = ci[1]+1;
-				return ci[0];
-			}
-			return -1;
-*/
-			
-			if (this._textpos<this._text.length)
-				return this._text.charAt(this._textpos++);
-			return -1;
-			
-		}
-
-	TextReader.prototype.getWord = function() {
-			var letters = [];
-
-			this._gotWord = false;
-			this._gotDelimiter = false;
-			this._delimiterType = DEL_TYPE_NONE;
-
-			while(true)
-			{
-				if(this._gotChar) this._gotChar = false; // check to see if we already have the next character
-				else this._char=this.getCharTxt(); // otherwise, get the next character (normal or UTF-8)
-				
-				if(this._char < 0) // check for EOF encountered
-				{
-					this._delimiterType = DEL_TYPE_EOF;
-					var s = letters.join(""); // finish the word off
-					return s;
-				}
-				else if( (this._char == '\n') || (this._char == '\r') ) // check for newline characters
-				{
-					this._delimiterType = DEL_TYPE_NEWLINE;
-					this._gotDelimiter=true;
-				}
-				else if(isspace(this._char)) // check for white space
-				{
-					if (DEL_TYPE_WHITE > this._delimiterType)
-						this._delimiterType = DEL_TYPE_WHITE; // if delimiter isn't already at NEWLINE, set it to WHITE
-					this._gotDelimiter=true;
-				}
-				else if( iscntrl(this._char) ) continue; // skip any other control characters
-				else if(this._gotDelimiter) // have we just reached the end of one or more delimiters?
-				{
-					if(this._gotWord) // make sure that we have a word
-					{
-						this._gotChar=true;
-						var s = letters.join(""); // finish the word off
-						return s;
-					}
-					else // these were preliminary delimiters and we will ignore them
-					{
-						this._delimiterType = DEL_TYPE_NONE;
-						this._gotDelimiter=false;
-						this._gotChar=true;
-					}
-				}
-				else if(letters.length<255) // don't let the string get too long
-				{
-					letters.push(this._char); // add this character to the word
-					this._gotWord=true;
-				}
-			}
-
-			return ""; // can't get here
-		}
 
 	function _error(callback, message, returnCode) {
 		var err = { message: message };
@@ -198,14 +93,15 @@ var wordlib = require("./lib/words");
 		return false;
 	}
 
-	function _readHashes(text, options, callback) {
+	function _buildHashes(text, options, callback) {
 			
 		var indoc = new TextReader(text);
 
 		var QWordHash = [];
-		var wordlist = [];  // *debug only*
+		var WordPos = [];  // positions of the start of each word
 		while( !indoc.isFinished() )				// loop until an eof
 		{
+			var pos = indoc.getPos();
 			var word = indoc.getWord();				// get the next word
 			if(options.bIgnorePunctuation) word = wordlib.removePunct(word);	// if ignore punctuation is active, remove punctuation
 			if(options.bIgnoreOuterPunctuation) word = wordlib.outerPunct(word);	// if ignore outer punctuation is active, remove outer punctuation
@@ -214,7 +110,7 @@ var wordlib = require("./lib/words");
 			if(options.bSkipLongWords && (word.length > options.SkipLength) ) continue;	// if skip too-long words is active, skip them
 			if(options.bSkipNonwords && !(wordlib.isWord(word)) ) continue;		// if skip nonwords is active, skip them
 
-			wordlist.push(word);
+			WordPos.push(pos);
 			QWordHash.push(wordlib.hash(word));					// hash-code the word and save that hash
 		}
 
@@ -222,11 +118,12 @@ var wordlib = require("./lib/words");
 		var data = {};
 		data.WordsTotal = Words;							// save number of words in document entry
 		data.WordHash =	QWordHash;		// allocate array for hash-coded words in doc entry
+		data.WordPos = WordPos;
 		data.SortedWords = [];
-			
+		
 		for (var i=0;i<Words;i++)			// loop for all the words in the document
 		{
-			data.SortedWords.push({ number:i, hash: QWordHash[i], word: wordlist[i]});	// copy over hash-coded words
+			data.SortedWords.push({ number:i, hash: QWordHash[i]});	// copy over hash-coded words
 		}
 
 		data.SortedWords.sort(function(a,b) {
@@ -274,9 +171,20 @@ var WORD_FILTERED 	= 2;
 		var Anchor;											// number of current match anchor
 		var i;
 
-		data.i.MatchingWordsPerfect=0;
-		data.i.MatchingWordsTotalL=0;
-		data.i.MatchingWordsTotalR=0;
+		data.i = { // todo. change how this works (ie use ranges instead)
+			MatchMarkL: [],
+			MatchMarkR: [],
+			MatchAnchorL: [],
+			MatchAnchorR: [],
+			MatchMarkTempL: [],
+			MatchMarkTempR: [],
+			MatchingDocumentPairs: 0,
+			MatchingWordsPerfect: 0,
+			MatchingWordsTotalL: 0,
+			MatchingWordsTotalR: 0,
+		};
+		var matches = [];
+
 
 		function PercentMatching(FirstL,FirstR,LastL,LastR,PerfectMatchingWords)
 		{
@@ -574,10 +482,22 @@ var WORD_FILTERED 	= 2;
 					if( MatchingWordsPerfect >= options.PhraseLength )	// check that phrase has enough perfect matches in it to mark
 					{
 						Anchor++;									// increment anchor count
+						
+						var getTextLen = function(doc, first, last) { 
+							var v = -1;
+							try { v = doc.WordPos[last+1]; v = v - doc.WordPos[first]; } catch(e) {} 
+							if (v<-1) v=-1;
+							return v; 
+						};
+						var imperfectPosL = [];
+						var imperfectPosR = [];
+
 						for(i=FirstLp;i<=LastLp;i++)				// loop for all left matched words
 						{
 							data.i.MatchMarkL[i]=data.i.MatchMarkTempL[i];	// copy over left matching markup
 							if(data.i.MatchMarkTempL[i]==WORD_PERFECT) data.i.MatchingWordsPerfect++;	// count the number of perfect matching words (same as for right document)
+							else imperfectPosL.push({pos:docL.WordPos[i],
+									length: getTextLen(docL,i,i)});
 							data.i.MatchAnchorL[i]=Anchor;				// identify the anchor for this phrase
 						}
 						data.i.MatchingWordsTotalL += LastLp-FirstLp+1;	// add the number of words in the matching phrase, whether perfect or flawed matches
@@ -585,8 +505,27 @@ var WORD_FILTERED 	= 2;
 						{
 							data.i.MatchMarkR[i]=data.i.MatchMarkTempR[i];	// copy over right matching markup
 							data.i.MatchAnchorR[i]=Anchor;				// identify the anchor for this phrase
+							if(data.i.MatchMarkTempR[i]!=WORD_PERFECT) 
+								imperfectPosR.push({pos:docR.WordPos[i],
+									length: getTextLen(docR,i,i)});
 						}
 						data.i.MatchingWordsTotalR += LastRp-FirstRp+1;	// add the number of words in the matching phrase, whether perfect or flawed matches
+
+
+
+						var match = { 
+								textL:{ 
+										pos:docL.WordPos[FirstLp], 
+										length:getTextLen(docL, FirstLp, LastLp), 
+										wordCount: LastLp-FirstLp+1,
+										skipped:imperfectPosL },
+								textR:{ 
+										pos:docR.WordPos[FirstRp], 
+										length:getTextLen(docR, FirstRp, LastRp), 
+										wordCount: LastRp-FirstRp+1,
+										skipped:imperfectPosR }
+							};
+						matches.push(match);
 					}
 				}
 			}
@@ -602,11 +541,19 @@ var WORD_FILTERED 	= 2;
 			fflush(data.i.fLog);
 		}
 		*/
+
+		data.matches[docL.docNum][docR.docNum] = matches;
 		return -1;
 	}
 
-	function _documentToHtml(text, MatchMark, MatchAnchor, words, hrefThis, hrefOther, options)
+	/*function _documentToHtml_old(text, MatchMark, MatchAnchor, words, hrefThis, hrefOther, options)
 	{
+		// delimiter types
+		var DEL_TYPE_NONE 		= 0;
+		var DEL_TYPE_WHITE 		= 1;
+		var DEL_TYPE_NEWLINE 	= 2;
+		var DEL_TYPE_EOF 		= 3;
+
 		var wordcount=0;								// current word number
 
 		var word;
@@ -674,7 +621,7 @@ var WORD_FILTERED 	= 2;
 					{
 						m_fHtml.push("<span class='match-filtered'>" + _.escape(word) + "</span>");			// This is a filtered word.
 						if(indoc._delimiterType == DEL_TYPE_WHITE) m_fHtml.push(" ");					// print a blank for white space
-						else if(indoc._delimiterType == DEL_TYPE_NEWLINE) m_fHtml.push("<br>");			// print a break for a new line
+						else if(indoc._delimiterType == DEL_TYPE_NEWLINE) m_fHtml.push("\n<br>\n");			// print a break for a new line
 					}
 
 					continue;
@@ -687,7 +634,7 @@ var WORD_FILTERED 	= 2;
 			{
 				m_fHtml.push(_.escape(word));			// print the character, using UTF8 translation
 				if(indoc._delimiterType == DEL_TYPE_WHITE) m_fHtml.push(" ");					// print a blank for white space
-				else if(indoc._delimiterType == DEL_TYPE_NEWLINE) m_fHtml.push("<br>");			// print a break for a new line
+				else if(indoc._delimiterType == DEL_TYPE_NEWLINE) m_fHtml.push("\n<br>\n");			// print a break for a new line
 			}
 		}
 		if(LastMatch==WORD_PERFECT) m_fHtml.push("</span>");	// close out red markups if they were active
@@ -698,13 +645,13 @@ var WORD_FILTERED 	= 2;
 	}
 
 
-	function _reportMatchedPair(textL, textR, L, R, docL, docR, options, data)
+	function _reportMatchedPair_old(textL, textR, docL, docR, options, data)
 	{
-		var leftHtml  = _documentToHtml(textL[L],data.i.MatchMarkL,data.i.MatchAnchorL,docL.WordsTotal,"docL", "docR", options); 
-		var rightHtml = _documentToHtml(textR[R],data.i.MatchMarkR,data.i.MatchAnchorR,docR.WordsTotal,"docR", "docL", options); 
+		var leftHtml  = _documentToHtml_old(textL[docL.docNum],data.i.MatchMarkL,data.i.MatchAnchorL,docL.WordsTotal,"docL", "docR", options); 
+		var rightHtml = _documentToHtml_old(textR[docR.docNum],data.i.MatchMarkR,data.i.MatchAnchorR,docR.WordsTotal,"docR", "docL", options); 
 		var html = "";
 		if (textL.length>1 || textR.length>1)
-			html += "<div class='doc-container'><h2>Comparison results of #" + L + " and #"+R+"</h2>";
+			html += "<div class='doc-container'><h2>Comparison results of #" + docL.docNum + " and #"+docR.docNum+"</h2>";
 		html += "<div class='doc' id='docL'>" + leftHtml + "</div>\n" +
 				"<div class='doc' id='docR'>" + rightHtml + "</div>\n" +
 					"";
@@ -712,9 +659,116 @@ var WORD_FILTERED 	= 2;
 			html += "</div>";
 		data.htmlmatches.push(html);
 		return -1;
+	}*/
+
+
+	function ASSERT(bool, text) {
+		if (!bool) 
+			throw "ASSERTION! " + text;
 	}
 
+	function _brief(text, brieflen, bFirst) {
+		if (brieflen>0) {
+			if (brieflen==1) 
+				return ""; // special case brieflen. (don't show any leadin/lead out)
+			if (!!bFirst) return "..." + text.slice(-brieflen);
+			if (text.length<(brieflen*2)) return text;
+			return text.slice(0,brieflen) + "...\n\n\n..." + text.slice(-brieflen);
+		}
+		return text;
+	}
+
+	function _buildDoc(text, idbase, side, otherside, matches, options) {
+		if (!matches.length)
+			return '';
+
+		// sort the relevant matches in document order 
+		var sorted = [];
+		for (var i=0; i<matches.length; i++) {
+			var match = matches[i]["text" + side]; // eg matches[i].textL
+			match.num = i+1;
+			sorted.push(match);
+		}
+		sorted.sort(function(a,b) {
+			return a.pos - b.pos;
+		});
+		var brieflen = options.bBriefReport ? (options.bTerseReport ? 1 : options.PhraseLength*3*5) : 0; // = approx 100 words. (*3 is magic number, *5 is approx #letters per word)
+		// split the text into sections
+		var html = []; // it's more efficient this way (as a list of strings there's (apparently) less memory munging on big files)
+		var lastpos = 0;
+		for (var i=0; i<sorted.length; i++)
+		{
+			var m = sorted[i];
+			ASSERT(m.pos>=lastpos, "sorted matches are out of order");
+			ASSERT(m.length>0, "matches' length is invalid");
+			var l = _.escape(_brief(text.slice(lastpos, m.pos),brieflen,lastpos==0)); // untreated text to the left of this match
+			var t; // this matches' text
+			if (!m.skipped || m.skipped.length==0) { // easy case. no skipped words
+				t = '<span class="match">' + _.escape(text.slice(m.pos, m.pos+m.length)) + '</span>';
+			} else { // need to further split into skipped words
+				t = [];
+				lastpos = m.pos;
+				for (var j=0; j<m.skipped.length; j++) {
+					var sk = m.skipped[j];
+					ASSERT(sk.pos>=lastpos, "skipped matches are out of order");
+					ASSERT(sk.pos>=m.pos && (sk.pos+sk.length)<=(m.pos+m.length), "sorted matches are outside expected range");
+					var l2 = _.escape(text.slice(lastpos, sk.pos)); // untreated text to the left of this match
+					var t2 = '</span><span class="match-partial">' + _.escape(text.slice(sk.pos, sk.pos+sk.length)) + '</span><span class="match">';
+					lastpos = sk.pos + sk.length;
+					t.push(l2 + t2);
+				}
+				if (lastpos < m.pos + m.length)
+					t.push(_.escape(text.slice(lastpos,  m.pos + m.length)));
+
+				t = '<span class="match">' + t.join("") + '</span>'; // flatten the list of strings
+				//remove any empty spans (it can happen)
+				t = t.split('<span class="match"></span>').join("");
+			}
+			//wrap this match in an anchor, pointing to the 'other side' (it will do the same in return)
+			t = '\r<!-- pos='+m.pos+', end='+(m.pos+m.length)+', length='+m.length+', match#='+m.num+', num words skipped='+m.skipped.length+' -->\r<a href="#'+idbase+otherside+m.num + '" id="'+idbase+side + m.num + '">' + t + '</a>';
+			html.push(l + t);
+
+			lastpos = m.pos+m.length;
+		}
+		if (lastpos < text.length)
+			html.push(_.escape(_brief(text.slice(lastpos),brieflen,false)));
+
+		// flatten the list of strings
+		html = html.join("").split("\n").join("\n<br>\n");
+		return '\r<!-- doc length='+text.length+'--> <div class="doc" id="'+idbase+side+'">\n' + html + '</div>';
+	}
+
+	function _reportMatchedPair(textL, textR, docL, docR, options, data)
+	{
+		var idbase = 'doc';
+		if (textL.length>1 || textR.length>1)
+		 idbase += docL.docNum + "" +docR.docNum;
+
+		var matches = data.matches[docL.docNum][docR.docNum];
+		if (matches.length==0)
+			return '';// nothing matched
+		var leftHtml  = _buildDoc(textL[docL.docNum], idbase, 'L', 'R', matches, options); 
+		var rightHtml = _buildDoc(textR[docR.docNum], idbase, 'R', 'L', matches, options);
+		var html = "";
+		if (textL.length>1 || textR.length>1)
+			html += "\n\n<div class='doc-container'><h2>Comparison results of #" + docL.docNum + " and #"+docR.docNum+"</h2>\n";
+		html += leftHtml + rightHtml +
+					"\n";
+		if (textL.length>1 || textR.length>1)
+			html += "</div>";
+		return html;
+	}
+
+
 	function _copyfind(textL, textR, options, callback) {
+		if (!Date.now) {
+			Date.now = function now() {
+				return new Date().getTime();
+			};
+		}
+
+		var startTime = Date.now();
+
 		if (_.isFunction(options)) {
 		    callback = options;
 		    options = {};
@@ -723,6 +777,7 @@ var WORD_FILTERED 	= 2;
 		_.defaults(options, defaultOptions); 
 
 		// turn sources into an array
+		var singleDimensionedParams = _.isString(textL) && _.isString(textR);
 		if (_.isString(textL)) textL = [textL];
 		if (_.isString(textR)) textR = [textR]; 
 
@@ -732,10 +787,11 @@ var WORD_FILTERED 	= 2;
 
 		var data = {
 			matches: [],
-			htmlmatches: [],
 			hashesL: [],
 			hashesR: []
 		};
+		// build a 2d array for the matches
+		data.matches[0] = [];
 
 		// try an apply existing hashes now.
 		if (options.hashesL) {
@@ -750,7 +806,7 @@ var WORD_FILTERED 	= 2;
 		// convert the text to hashes (aka CompareDocument::LoadDocument)
 		if (!data.hashesL.length) {
 			for (var i=0; i<textL.length; i++) {
-				var hashdata = _readHashes(textL[i], options, callback);
+				var hashdata = _buildHashes(textL[i], options, callback);
 				if (!hashdata) return; 
 				data.hashesL.push(hashdata);
 
@@ -758,7 +814,7 @@ var WORD_FILTERED 	= 2;
 		}
 		if (!data.hashesR.length) {
 			for (var i=0; i<textR.length; i++) {
-				var hashdata = _readHashes(textR[i], options, callback);
+				var hashdata = _buildHashes(textR[i], options, callback);
 				if (!hashdata) return; 
 				data.hashesR.push(hashdata);
 
@@ -766,32 +822,37 @@ var WORD_FILTERED 	= 2;
 		}
 
 		// CompareDocument::SetupComparisons
-		data.i = { // todo. change how this works (ie use ranges instead)
-			MatchMarkL: [],
-			MatchMarkR: [],
-			MatchAnchorL: [],
-			MatchAnchorR: [],
-			MatchMarkTempL: [],
-			MatchMarkTempR: [],
-			MatchingDocumentPairs: 0
-		};
+		var htmlmatches = [];
 
 		// compare each Left doc against each Right one:
 		for (var l=0; l<data.hashesL.length; l++) {
 			for (var r=0; r<data.hashesR.length; r++) {
+				data.hashesL[l].docNum = l;
+				data.hashesR[r].docNum = r;
+				data.matches[l][r] = []; // not necessary, here for clarification
 				var nRc = _comparePair(data.hashesL[l], data.hashesR[r], options, data);
 				if (nRc>0) {
 					// erm. some error
 					return _error(callback, "Error "+nRc+" occurred while comparing Document "+l+" and Document "+r, nRc);
 				}
-				if(data.i.MatchingWordsPerfect>=options.WordThreshold)		// if there are enough matches to report,
+				if(options.bBuildReport && (data.i.MatchingWordsPerfect>=options.WordThreshold))		// if there are enough matches to report,
 				{
 					data.i.MatchingDocumentPairs++;				// increment count of matched pairs of documents
-					_reportMatchedPair(textL, textR, l, r, data.hashesL[l], data.hashesR[r], options, data);
+					var html = _reportMatchedPair(textL, textR, data.hashesL[l], data.hashesR[r], options, data);
+					if (html.length) htmlmatches.push(html);
 				}
 			}
 		}
+		if (options.bBuildReport)
+		{
+			data.html = htmlmatches.join("");
+		}
 
+		if (singleDimensionedParams) {
+			var matches00 = data.matches[0][0];
+			data.matches = matches00; // remove the 2d array aspect, if not needed.
+		}
+		data.executionTime = Date.now()-startTime;
 		callback(false, data);
 		return true;
 
