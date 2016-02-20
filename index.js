@@ -667,11 +667,12 @@ var WORD_FILTERED 	= 2;
 			throw "ASSERTION! " + text;
 	}
 
-	function _brief(text, brieflen, bFirst) {
+	function _brief(text, brieflen, bFirst, bLast) {
 		if (brieflen>0) {
 			if (brieflen==1) 
 				return ""; // special case brieflen. (don't show any leadin/lead out)
-			if (!!bFirst) return "..." + text.slice(-brieflen);
+			if (bFirst) return "..." + text.slice(-brieflen);
+			if (bLast) return text.slice(0,brieflen) + "...";
 			if (text.length<(brieflen*2)) return text;
 			return text.slice(0,brieflen) + "...\n\n\n..." + text.slice(-brieflen);
 		}
@@ -701,7 +702,7 @@ var WORD_FILTERED 	= 2;
 			var m = sorted[i];
 			ASSERT(m.pos>=lastpos, "sorted matches are out of order");
 			ASSERT(m.length>0, "matches' length is invalid");
-			var l = _.escape(_brief(text.slice(lastpos, m.pos),brieflen,lastpos==0)); // untreated text to the left of this match
+			var l = _.escape(_brief(text.slice(lastpos, m.pos),brieflen,lastpos==0, false)); // untreated text to the left of this match
 			var t; // this matches' text
 			if (!m.skipped || m.skipped.length==0) { // easy case. no skipped words
 				t = '<span class="match">' + _.escape(text.slice(m.pos, m.pos+m.length)) + '</span>';
@@ -731,7 +732,7 @@ var WORD_FILTERED 	= 2;
 			lastpos = m.pos+m.length;
 		}
 		if (lastpos < text.length)
-			html.push(_.escape(_brief(text.slice(lastpos),brieflen,false)));
+			html.push(_.escape(_brief(text.slice(lastpos),brieflen,false, true)));
 
 		// flatten the list of strings
 		html = html.join("").split("\n").join("\n<br>\n");
