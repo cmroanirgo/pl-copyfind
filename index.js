@@ -120,6 +120,7 @@ var TextReader = require("./lib/TextReader");
 		data.WordHash =	QWordHash;		// allocate array for hash-coded words in doc entry
 		data.WordPos = WordPos;
 		data.SortedWords = [];
+		data.DocLength = text.length;
 		
 		for (var i=0;i<Words;i++)			// loop for all the words in the document
 		{
@@ -484,11 +485,15 @@ var WORD_FILTERED 	= 2;
 						Anchor++;									// increment anchor count
 						
 						var getTextLen = function(doc, first, last) { 
-							var v = -1;
-							try { v = doc.WordPos[last+1]; v = v - doc.WordPos[first]; } catch(e) {} 
-							if (v<-1) v=-1;
-							return v; 
+							var f = doc.WordPos[first];
+							var l;
+							if (last==doc.WordPos.length-1) //
+								l = doc.DocLength;
+							else
+								l = doc.WordPos[last+1]; 
+							return l-f; 
 						};
+						
 						var imperfectPosL = [];
 						var imperfectPosR = [];
 
