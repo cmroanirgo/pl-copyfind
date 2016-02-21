@@ -1,7 +1,6 @@
 var copyfind = require("../index.js");
 var fs = require("fs");
 var util = require("util");
-var _ = require("underscore");
 
 var options = { 
 	      PhraseLength:34

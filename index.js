@@ -731,7 +731,7 @@ var WORD_FILTERED 	= 2;
 				t = t.split('<span class="match"></span>').join("");
 			}
 			//wrap this match in an anchor, pointing to the 'other side' (it will do the same in return)
-			t = '\r<!-- pos='+m.pos+', end='+(m.pos+m.length)+', length='+m.length+', match#='+m.num+', num words skipped='+m.skipped.length+' -->\r<a href="#'+idbase+otherside+m.num + '" id="'+idbase+side + m.num + '">' + t + '</a>';
+			t = '<a href="#'+idbase+otherside+m.num + '" id="'+idbase+side + m.num + '">' + t + '</a>';
 			html.push(l + t);
 
 			lastpos = m.pos+m.length;
@@ -741,7 +741,7 @@ var WORD_FILTERED 	= 2;
 
 		// flatten the list of strings
 		html = html.join("").split("\n").join("\n<br>\n");
-		return '\r<!-- doc length='+text.length+'--> <div class="doc" id="'+idbase+side+'">\n' + html + '</div>';
+		return '\n\n<div class="doc" id="'+idbase+side+'">\n' + html + '</div>';
 	}
 
 	function _reportMatchedPair(textL, textR, docL, docR, options, data)
@@ -796,8 +796,6 @@ var WORD_FILTERED 	= 2;
 			hashesL: [],
 			hashesR: []
 		};
-		// build a 2d array for the matches
-		data.matches[0] = [];
 
 		// try an apply existing hashes now.
 		if (options.hashesL) {
@@ -832,10 +830,13 @@ var WORD_FILTERED 	= 2;
 
 		// compare each Left doc against each Right one:
 		for (var l=0; l<data.hashesL.length; l++) {
+			// build a 2d array for the matches
+			data.matches[l] = [];
+
 			for (var r=0; r<data.hashesR.length; r++) {
 				data.hashesL[l].docNum = l;
 				data.hashesR[r].docNum = r;
-				data.matches[l][r] = []; // not necessary, here for clarification
+				data.matches[l][r] = []; 
 				var nRc = _comparePair(data.hashesL[l], data.hashesR[r], options, data);
 				if (nRc>0) {
 					// erm. some error
