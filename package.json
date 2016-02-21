@@ -11,15 +11,22 @@
   "directories": {
     "lib": "./lib"
   },
- "dependencies": {
-    "underscore" : "latest"
+  "dependencies": {
+    "underscore": "latest"
   },
-
+  "devDependencies": {
+    "node-readability": "^2.1.5",
+    "uglify-js": "^2.6.1"
+  },
   "scripts": {
     "test": "node tests/test1.js > tests/test1.html",
     "test2": "node tests/test2.js",
     "test3": "node tests/test3.js",
-    "test:words" : "node tests/words1.js"
+    "test:words": "node tests/words1.js",
+    "build:base": "browserify -r underscore -r ./index.js:pl-copyfind -r ./demos/demo.js:demo",
+    "build:debug": "echo building debug... && npm run build:base -s > demos/node-bundle.js",
+    "build:release": "echo building release... && npm run build:base -s | uglifyjs --c --m > demos/node-bundle.js",
+    "build":"npm run build:release -s"
   },
   "license": "GPL"
 }

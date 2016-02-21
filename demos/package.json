@@ -1,0 +1,22 @@
+{
+  "name": "copyfind",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "update": "npm update && npm install pl-copyfind", 
+    "build:debug": "browserify index.js > web-copyfind.min.js",
+    "build:release": "browserify index.js | uglifyjs --c --m > web-copyfind.min.js",
+    "build": "echo 'building...' && npm run build:release"
+  },
+  "author": "",
+  "license": "GPL",
+  "dependencies": {
+    "pl-copyfind": "git+ssh://git@bitbucket.org:cmroanirgo/projects-pl-copyfind.git",
+    "node-readability": "latest"
+  },
+  "devDependencies": {
+    "uglify-js": "^2.6.1"
+  }
+}
