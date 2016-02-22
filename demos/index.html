@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Copy Find </title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<link rel="stylesheet" href="pure.css">
+<link rel="stylesheet" href="jquery.modal.css">
+<style>
+.column { margin:1em 2%; width:45%; box-sizing:border-box; position:relative; display: inline-block; text-align: left}
+#compare-form { text-align:center;}
+input[type="text"] {  margin:1em 0 1em 0; width:80%;}
+input[type="file"] {  margin:0; width:80%;}
+textarea { height: 350px; margin:1em 0; width:100%}
+.button-xlarge { margin-top: margin-top:1em;font-size:125%;}
+#options-btn { margin-left:2.5%;}
+#results { text-align:center;width:80%;height:90%;}
+.doc { 
+	height:90%;overflow:scroll;
+	box-sizing:border-box;text-align:left;display:inline-block;width:47%; border:1px solid #888; margin:1em 1%;padding:1em;}
+.match { color:#ff0000 } 
+.match-partial { color:#007F00 } 
+.match-filtered { color:#0000FF}
+#spinner { display:none;}
+.modal a.close-modal {
+    top: 0;
+    right: 0;
+ }
+
+@media screen and (max-width: 700px) {
+	.column, .doc { display: block; width:90%;}
+	#results { width:95%; height:auto;}
+	.modal { padding: 8px;}
+}
+
+</style>
+<script src="node-bundle.js"></script>
+<script src="jquery-2.2.0.min.js"></script>
+<script src="jquery.modal.min.js"></script>
+<script>
+var copyfind = require("pl-copyfind");
+var demo = require("demo");
+
+$(function() {
+	console.log("initialising demo...");
+
+	var source = {
+		titleL:'',
+		titleR:''
+	}
+
+	function handleFileSelect(subselector) {
+		var file = $("#files"+subselector)[0].files[0];
+		$("#url"+subselector).empty();
+		source["title"+subselector] = '';
+		if (file) {
+		    if(!file.type.match('^text')) {
+		    	alert("This does not appear to be a text file and won't be loaded");
+		    	return;
+		    }
+		        
+			var reader = new FileReader();
+			reader.readAsText(file, "UTF-8");
+
+			reader.onload = function (evt) {
+				console.log("loaded '"+file.name+"' as '" + file.type + "' as text file");
+				var text = evt.target.result;
+				var ext = '';
+				var i = file.name.lastIndexOf('.');
+				if (i>0) ext = file.name.slice(i+1);
+				if (ext.match(/^htm/i)) 
+					text = demo.stripHtml(text);
+				source["title"+subselector] = file.name;
+				$("#text"+subselector).val(text);
+				updateCompareBtnState();
+			}
+
+			reader.onerror = function (evt) {
+				alert("error reading file");
+				$('#compare-btn').prop('disabled', true);
+			}
+		}
+	}
+
+
+	function loadurl(subselector) {
+		var url = $("#url"+subselector).val();
+	 	$("#text"+subselector).val('');
+		source["title"+subselector] = '';
+	 	updateCompareBtnState();
+		$("#spinner").show();
+
+		demo.fetchUrl(url, function(err, html) {
+			$("#spinner").hide();
+
+			if (!err) {
+				var text = demo.stripHtml(html);
+				$("#text"+subselector).val(text);
+				source["title"+subselector] = url;
+				updateCompareBtnState();
+			 } else {
+			 	alert("Could not fetch from: "+url+"\n" + err.message);
+			 }
+		});
+	}
+
+	function updateCompareBtnState() {
+	    if($('#textL').val().length>0 && $('#textR').val().length>0){
+	    	$('#compare-btn').removeAttr('disabled');
+	    } else {
+		 	$('#compare-btn').prop('disabled', true);
+	    }
+	}
+
+	function saveOptions() {
+		if(typeof(Storage) !== "undefined") {
+			var options = getOptions();
+			try { localStorage.setItem("options", JSON.stringify(options)); }
+			catch(e) { console.log("Can't save options: " + e.message); }
+		}
+	}
+	function loadOptions() {
+		var options = {};
+		function setBoolOption(name) {
+			$("#"+name).prop('checked', !!(options[name]));
+		}
+		function setIntOption(name) {
+		  	$("#" + name).val(parseInt(options[name]));
+		}
+		if(typeof(Storage) !== "undefined") {
+			try {
+				console.log("loading stored options");
+				options = JSON.parse(localStorage.getItem("options"))
+				setBoolOption("bBriefReport");
+				setBoolOption("bIgnoreCase");
+				setBoolOption("bIgnoreNumbers");
+				setBoolOption("bIgnoreOuterPunctuation");
+				setBoolOption("bIgnorePunctuation");
+				setBoolOption("bSkipNonwords");
+				setIntOption("PhraseLength");
+				setIntOption("WordThreshold");
+				setIntOption("MismatchTolerance");
+				setIntOption("MismatchPercentage");
+				if (setBoolOption("bSkipLongWords")) setIntOption("SkipLength");
+
+			}
+			catch(e) { console.log("Can't load options: " + e.message); }
+		}
+	}	
+	function getOptions() {
+
+		var options = { };
+		function setBoolOption(name) {
+			options[name] = !!$("#"+name).is(':checked');
+			return options[name];
+		}
+		function setIntOption(name) {
+		  if ($("#" + name).val().length>0) {
+		  	try {
+		  		options[name] = parseInt($("#" + name).val());
+		  	}
+		  	catch(e) { console.log("Error when getting option '"+name+"' :" +e.message)}
+		  }
+		}
+		setBoolOption("bBriefReport");
+		setBoolOption("bIgnoreCase");
+		setBoolOption("bIgnoreNumbers");
+		setBoolOption("bIgnoreOuterPunctuation");
+		setBoolOption("bIgnorePunctuation");
+		setBoolOption("bSkipNonwords");
+		setIntOption("PhraseLength");
+		setIntOption("WordThreshold");
+		setIntOption("MismatchTolerance");
+		setIntOption("MismatchPercentage");
+		if (setBoolOption("bSkipLongWords")) setIntOption("SkipLength");
+		return options;
+
+	}
+
+	loadOptions();
+
+	$(document).on('change', '#filesL', function() { handleFileSelect('L'); });
+	$(document).on('change', '#filesR', function() { handleFileSelect('R'); });
+
+	$('textarea').on('change keyup paste',updateCompareBtnState);
+	$('#urlL-btn').click(function(evt) { loadurl('L'); evt.preventDefault();});
+	$('#urlR-btn').click(function(evt) { loadurl('R'); evt.preventDefault();});
+	$('#save-options-btn').click(function(evt) { saveOptions(); $.modal.close(); evt.preventDefault();});
+
+
+	updateCompareBtnState();
+
+    $("#compare-form").submit(function(evt) {
+	    evt.preventDefault();
+		$('#compare-btn').prop('disabled', true);
+		$("#spinner").show();
+
+		var left = $("#textL").val();
+		var right = $("#textR").val();
+
+
+		var options = getOptions(); 
+		options.bBuildReport= true;
+
+		setTimeout(function() { 
+			copyfind(left, right, options, function(err, data) {
+			$('#compare-btn').removeAttr('disabled');
+			$("#spinner").hide();
+
+			if (err) 
+				{ $("#results").html("Failed to compare: " + err.toString()).modal(); return; }
+
+			var results = data.html;
+			var btnhtml = '<br><a id="save-results" href="#" class="pure-button pure-button-primary">Save Results</a><br>\n'+
+						'<small>Comparison took ' +data.executionTime+ ' milliseconds<small>';
+		  	$("#results").html(data.html.length ? results+btnhtml : "(No results)").modal();
+		  	$("#save-results").click(function() {
+				var html = "<!DOCTYPE html>\n" +
+								"<html><head><meta charset=\"UTF-8\"><style>html,body { height:100%;font-family:sans-serif;}\n" +
+								".doc { display:inline-block;width:45%;box-sizing:border-box;overflow:scroll;height:60%;max-height:100%;border:1px solid #888; margin:1em;padding:1em;} \n"+
+								" @media screen and (max-width: 700px) { .doc { display: block; width:90%;} }\n"+
+								".match { color:#ff0000 } .match-partial { color:#007F00 }\n" +
+								"</style></head><body><h1>Comparison results</h1>\n" +
+								"<p>Left Source: " + (source.titleL || $("#urlL").val()) + "</p>\n" + 
+								"<p>Right Source: " + (source.titleR || $("#urlR").val()) + "</p>\n" + 
+								"<p>Date: " + (new Date()).toUTCString() + "</p>\n" + 
+								results + "\n"+
+								"\n<h2>Options Used</h2>\n"+
+								"<p>" + JSON.stringify(options).split(",").join(",<br>\n").split("\"").join("")+"</p>"
+								"\n</body></html>";
+
+		  		// from http://muaz-khan.blogspot.com.au/2012/10/save-files-on-disk-using-javascript-or.html
+				var textFile = new Blob([html], { 
+				   type: 'text/html'
+				});
+				var demo = require("demo");
+				demo.invokeSaveAsDialog(textFile, 'results.html');
+		  	});	
+		});}, 100);
+
+	});
+	console.log("demo is ready!");
+});
+
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+	<h1>Copy Find</h1>
+	<p><small>You can also save this to your computer using "File> Save As" and "Webpage complete" in order to use it offline</small></p>
+
+<div id="options-dlg" style="display:none;">
+<form id="options-form" class="pure-form pure-form-stacked" >
+	<fieldset>
+        <legend>Options</legend>
+ 	<label for="PhraseLength">Shortest Phrase to Match</label><input value="34" id="PhraseLength" type="text">
+ 	<label for="WordThreshold">Fewest Matches to Report</label><input value="100" id="WordThreshold" type="text">
+ 	<label for="MismatchTolerance">#Most Imperfections to Allow</label><input value="6" id="MismatchTolerance" type="text">
+ 	<label for="MismatchPercentage">Minimum % of Matching Words</label><input value="80" id="MismatchPercentage" type="text">
+
+    <label for="bBriefReport" class="pure-checkbox">
+        <input id="bBriefReport" type="checkbox" checked> Brief Report
+    </label>
+    <label for="bIgnoreCase" class="pure-checkbox">
+        <input id="bIgnoreCase" type="checkbox" checked> Ignore Case
+    </label>
+
+    <label for="bIgnorePunctuation" class="pure-checkbox" class="pure-checkbox">
+        <input id="bIgnorePunctuation" type="checkbox" checked> Ignore Punctuation 
+    </label>
+    <label for="bIgnoreOuterPunctuation" class="pure-checkbox">
+        <input id="bIgnoreOuterPunctuation" type="checkbox"> Ignore Outer Punctuation 
+    </label>
+    <label for="bSkipLongWords" class="pure-checkbox">
+        <input id="bSkipLongWords" type="checkbox"> Skip Long Words 
+    </label>
+ 	<label for="SkipLength">Long Word Length</label><input value="20" id="SkipLength" type="text">
+
+    <label for="bSkipNonwords" class="pure-checkbox">
+        <input id="bSkipNonwords" type="checkbox"> Skip Non-Words 
+    </label>
+	<a id="save-options-btn" href="#" class="pure-button pure-button-primary">Save Options</a>
+    </fieldset>
+</form>
+</div>
+
+<a id="options-btn" href="#options-dlg" rel="modal:open" class="pure-button">Options</a>
+<form id="compare-form" class="pure-form">
+	<div class="column" id="columnL">
+	    <input id="urlL" type="text" placeholder="http://website.com/page.php"><a id="urlL-btn" href="#" class="pure-button">Load</a>
+		<input type="file" id="filesL"  />
+	    <textarea id="textL" placeholder="Paste text here, or load txt/html file"></textarea>
+	</div>
+	<div class="column" id="columnR">
+	    <input id="urlR" type="text" placeholder="http://website2.com/page.php"><a id="urlR-btn" href="#" class="pure-button">Load</a>
+		<input type="file" id="filesR"  />
+	    <textarea id="textR" placeholder="Paste text here, or load txt/html file"></textarea>
+	</div>
+
+    <button type="submit" id="compare-btn" class="pure-button pure-button-primary button-xlarge">Compare</button>
+	<div id="spinner"><p><img src="spinner.gif"/></p></div>
+</form>
+<div id="results">
+</div>
+</body>
+</html>
