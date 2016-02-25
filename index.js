@@ -1,14 +1,24 @@
 /**
- *
- * Copyright 2016 Craig Monro
+ * @license
+ * Copyright (c) 2016 Craig Monro (kodespace.com)
+ * No part of this file may be copied or retransmitted without adhering to the GPL license.
+ * This copyright notice may not be removed, without express permission of the copyright holder.
  * 
- *  Licensed under the MIT License
+ * This file is part of pl-copyfind, a Javascript fork of WCopyFind/CopyFind.
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * pl-copyfind is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * any later version.
+ *
+ * pl-copyfind is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with pl-copyfind.  If not, see <http://www.gnu.org/licenses/> or
+ * <https://github.com/cmroanirgo/pl-copyfind/blob/master/LICENSE.md/>
  */
 
 "use strict";

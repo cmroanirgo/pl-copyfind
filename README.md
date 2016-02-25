@@ -12,9 +12,9 @@ pl-copyfind does not:
 
 * ~download and extract the 'text' from various file formats. Depending upon the platform (either nodejs or a browser), there are a few solutions to this:
  
-    - mozilla's 'readbility' functions, which generally does excellent work at extracting *only* the main article text from web pages
-     - npm package `textract`. This is a 'one stop shop' for reading in a plethora of file formats. Note that this cannot be used in a browser solution, as it requires external binaries to be installed (although a server-side solution can be used for this).
-     - the demo package illustrates a poor man's method of converting html to text, using purely regex's.
+    - mozilla's 'readbility' functions, which generally does excellent work at extracting *only* the main article html from web pages
+    - npm package `textract`. This is a 'one stop shop' for reading in a plethora of file formats. Note that this cannot be used in a browser solution, as it requires external binaries to be installed (although a server-side solution can be used for this).
+    - the demo package illustrates a poor man's method of converting html to text, using purely regex's.
 * ~generate output files, although an optional html output is available.
 
 pl-copyfind does:
@@ -145,7 +145,13 @@ copyfind(src_texts, check_text2, options, function(err, data) {
 ```
 
 
+Licensing:
+---------
 
+This module and all its source is licensed under GPL, which is the original licensing of WCopyFind/CopyFind source. The license file can be found at [https://github.com/cmroanirgo/pl-copyfind/blob/master/LICENSE.md].
+
+Please note that if you *use* this library, as-is, then your project need not be subject to what is commonly called 'GPL cancer'. It is only if you embrace and extend the module that you must also release your source code, also under a GPL license.
+However, as all things go, it would be appreciated if attribution for the work done in this project was acknowledged in your source and information pages.
 
 
 

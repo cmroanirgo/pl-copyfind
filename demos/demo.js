@@ -1,3 +1,13 @@
+/**
+ * Copyright (c) 2016 Craig Monro (kodespace.com)
+ * No part of this file may be copied or retransmitted without adhering to the GPL license
+ * This copyright notice may not be removed, without express permission of the copyright holder.
+ * Demo/support functions for the pl-copyfind demonstration package.
+ * @module pl-copyfind/demos/demo.js
+ * @license GPL
+ * https://github.com/cmroanirgo/pl-copyfind/blob/master/LICENSE.md
+ */
+
 
 /**
  * @param {Blob} file - File or Blob object. This parameter is required.
@@ -114,15 +124,8 @@ function stripHtml(html)
                 replace(/<header.*?<\/header>/gi, ' ').
                 replace(/<figure.*?<\/figure>/gi, ' ');
     var tempDiv = $('<div>' + html + '</div>');
-    html = tempDiv.text();
-    html = html.replace(/\r/g, '').replace(/ {2,}/g, ' ').replace(/\n{2,}/g, '\n').replace(/\t{2,}/g, '\t');
+    html = tempDiv.text().replace(/\r/g, '').replace(/ {2,}/g, ' ').replace(/\n{2,}/g, '\n').replace(/\t{2,}/g, '\t');
     return html;
-    /*
-    var tmp = document.createElement("DIV");
-    tmp.innerHTML = html;
-    return tmp.textContent || tmp.innerText || "";*/
-    //return tmp.innerText || "";
-
 }
 
 
