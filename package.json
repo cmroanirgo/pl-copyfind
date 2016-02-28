@@ -4,7 +4,7 @@
     "email": "cmroanirgo@gmail.com"
   },
   "name": "pl-copyfind",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "ideas are based on those found at plagiarism.bloomfieldmedia.com's CopyFind/WCopyFind",
   "main": "index.js",
   "repository": {

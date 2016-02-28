@@ -25,7 +25,7 @@
 
 var _ = require("underscore");
 var wordlib = require("./lib/words");
-var TextReader = require("./lib/TextReader");
+var TextReader = require("./lib/textreader");
 
 ;(function() {
 
