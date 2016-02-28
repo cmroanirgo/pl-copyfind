@@ -55,22 +55,23 @@ See the demos folder for a complete working example that does not require a web 
 ```
 var copyfind = require('pl-copyfind');
 ...
-var options = { }; 
+var options = { PhraseLength: 3, WordThreshold: 3, bIgnoreCase:true}; 
 var src_text = "original text is here. lorem ipsum dolorem est";
-var check_text = "I plagiarised lorem ipsum dolorem est and I reckon I can get away with it";
-
+var check_text = "I plagiarised lorem ipsum DOLOREM est and I reckon I can get away with it";
+ 
 copyfind(src_text, check_text, options, function(err, data) {
 	if (err) 
 		throw "Failed to compare: " + err.toString();
-
+ 
 	if (!data.matches.length)
 		return false; // no comparison found
-
+ 
+ 	console.log("Found " + data.matches.length + " matches"); // expect 1
 	for (var i=0; i<data.matches.length; i++) {
 		var match = data.matches[i]; 
 		var orig_text = src_text.substr(match.textL.pos, match.textL.length);
 		var copied_text = check_text.substr(match.textR.pos, match.textR.length);
-		console.log("Match found: \n" + orig_text + "\nvs. \n" + copied_text + "\nat position : " + match.text2.pos);
+		console.log("Match found: \n" + orig_text + "\nvs. \n" + copied_text + "\nat position : " + match.textR.pos);
 	}
 });
 ```
@@ -79,7 +80,7 @@ copyfind(src_text, check_text, options, function(err, data) {
 ```
 var copyfind = require('pl-copyfind');
 ...
-var options = { }; 
+var options = { PhraseLength: 3, WordThreshold: 3 }; 
 var src_texts = ["original text is here. lorem ipsum dolorem est","This is another original text that is also dolorem est"];
 var check_texts = ["I plagiarised lorem ipsum dolorem est and I reckon I can get away with it","I didn't do lorem est this time"];
 

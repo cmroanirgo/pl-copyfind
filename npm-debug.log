@@ -1,0 +1,98 @@
+0 info it worked if it ends with ok
+1 verbose cli [ '/usr/local/bin/node', '/usr/local/bin/npm', 'publish' ]
+2 info using npm@2.14.12
+3 info using node@v4.3.1
+4 verbose publish [ '.' ]
+5 silly cache add args [ '.', null ]
+6 verbose cache add spec .
+7 silly cache add parsed spec Result {
+7 silly cache add   raw: '.',
+7 silly cache add   scope: null,
+7 silly cache add   name: null,
+7 silly cache add   rawSpec: '.',
+7 silly cache add   spec: '/Users/craig/web/src/pl-copyfind',
+7 silly cache add   type: 'directory' }
+8 verbose addLocalDirectory /Users/craig/.npm/pl-copyfind/0.9.2/package.tgz not in flight; packing
+9 verbose tar pack [ '/Users/craig/.npm/pl-copyfind/0.9.2/package.tgz',
+9 verbose tar pack   '/Users/craig/web/src/pl-copyfind' ]
+10 verbose tarball /Users/craig/.npm/pl-copyfind/0.9.2/package.tgz
+11 verbose folder /Users/craig/web/src/pl-copyfind
+12 info prepublish pl-copyfind@0.9.2
+13 verbose addLocalTarball adding from inside cache /Users/craig/.npm/pl-copyfind/0.9.2/package.tgz
+14 silly cache afterAdd pl-copyfind@0.9.2
+15 verbose afterAdd /Users/craig/.npm/pl-copyfind/0.9.2/package/package.json not in flight; writing
+16 verbose afterAdd /Users/craig/.npm/pl-copyfind/0.9.2/package/package.json written
+17 silly publish { author: { name: 'Craig Monro', email: 'cmroanirgo@gmail.com' },
+17 silly publish   name: 'pl-copyfind',
+17 silly publish   version: '0.9.2',
+17 silly publish   description: 'ideas are based on those found at plagiarism.bloomfieldmedia.com\'s CopyFind/WCopyFind',
+17 silly publish   main: 'index.js',
+17 silly publish   repository:
+17 silly publish    { type: 'git',
+17 silly publish      url: 'git+https://github.com/cmroanirgo/pl-copyfind.git' },
+17 silly publish   directories: { lib: './lib' },
+17 silly publish   dependencies: { underscore: 'latest' },
+17 silly publish   scripts:
+17 silly publish    { 'build:base': 'browserify -r underscore -r ./index.js:pl-copyfind -r ./demos/demo.js:demo',
+17 silly publish      'build:debug': 'echo building debug... && npm run build:base -s > demos/node-bundle.js',
+17 silly publish      'build:release': 'echo building release... && npm run build:base -s | uglifyjs --c --m --preamble "/**\n * Copyright (c) 2016 Craig Monro (kodespace.com)\n * No part of this file may be copied or retransmitted without adhering to the GPL license.\n * This copyright notice may not be removed, without express permission of the copyright holder.\n * https://github.com/cmroanirgo/pl-copyfind/blob/master/LICENSE.md\n */"> demos/node-bundle.js',
+17 silly publish      build: 'npm run build:release -s' },
+17 silly publish   license: 'GPL',
+17 silly publish   readme: 'pl-copyfind\n=============\n\n*A plagarism comparing function*\n\nThis project was inspired by the work of Dr Lou Bloomfield\'s CopyFind/WCopyFind windows programs (http://plagiarism.bloomfieldmedia.com/z-wordpress/software/wcopyfind/). Algorithmically there is an equivalence, however there are marked differences.\n\nKey Differences:\n-----------------\n\npl-copyfind does not:\n\n* ~download and extract the \'text\' from various file formats. Depending upon the platform (either nodejs or a browser), there are a few solutions to this:\n \n    - mozilla\'s \'readbility\' functions, which generally does excellent work at extracting *only* the main article html from web pages\n    - npm package `textract`. This is a \'one stop shop\' for reading in a plethora of file formats. Note that this cannot be used in a browser solution, as it requires external binaries to be installed (although a server-side solution can be used for this).\n    - the demo package illustrates a poor man\'s method of converting html to text, using purely regex\'s.\n* ~generate output files, although an optional html output is available.\n\npl-copyfind does:\n\n* ~have equivalent switches that the original program uses. You can ignore all of them and run your own sanitisers however.\n* ~allow the \'hashes\' to be stored in a cache. This is up to you to implement (although easy using one of many npm file caching packages).\n* ~allow multple inputs (comparators and comparatees). \n\nDefault Options:\n-------\n\n```\n\tPhraseLength: 6, // Shortest Phrase to Match\n\tWordThreshold: 100, // Fewest Matches to Report\n\tSkipLength: 20, // Needs bSkipLongWords. words this long are skipped\n\tMismatchTolerance: 2, // #Most Imperfections to Allow\n\tMismatchPercentage: 80, // Minimum % of Matching Words\n\tbIgnoreCase: false, // Ignore Letter Case\n\tbIgnoreNumbers: false, // Ignore Numbers\n\tbIgnoreOuterPunctuation: false, // Ignore Outer Punctuation\n\tbIgnorePunctuation: false, // Ignore Punctuation\n\tbSkipLongWords: false, // Skip Long Words\n\tbSkipNonwords: false, // Skip Non-Words\n\tbBuildReport: true, // generate html output\n\tbBriefReport: true, // show a html report of matches with lead in and out text, for context (otherwise shows full source text). Needs bBuildReport\n\tbTerseReport: false // show ONLY the matching text. Needs bBuildReport\n```\n\n\n\n\nUsage:\n--------\nSee the demos folder for a complete working example that does not require a web server to execute (just open index.html from your local file system to try it out).\n\n### Example 1. Single input comparison\n\n```\nvar copyfind = require(\'pl-copyfind\');\n...\nvar options = { PhraseLength: 3, WordThreshold: 3, bIgnoreCase:true}; \nvar src_text = "original text is here. lorem ipsum dolorem est";\nvar check_text = "I plagiarised lorem ipsum DOLOREM est and I reckon I can get away with it";\n \ncopyfind(src_text, check_text, options, function(err, data) {\n\tif (err) \n\t\tthrow "Failed to compare: " + err.toString();\n \n\tif (!data.matches.length)\n\t\treturn false; // no comparison found\n \n \tconsole.log("Found " + data.matches.length + " matches"); // expect 1\n\tfor (var i=0; i<data.matches.length; i++) {\n\t\tvar match = data.matches[i]; \n\t\tvar orig_text = src_text.substr(match.textL.pos, match.textL.length);\n\t\tvar copied_text = check_text.substr(match.textR.pos, match.textR.length);\n\t\tconsole.log("Match found: \\n" + orig_text + "\\nvs. \\n" + copied_text + "\\nat position : " + match.textR.pos);\n\t}\n});\n```\n\n### Example 2. Multiple input comparisons\n```\nvar copyfind = require(\'pl-copyfind\');\n...\nvar options = { PhraseLength: 3, WordThreshold: 3 }; \nvar src_texts = ["original text is here. lorem ipsum dolorem est","This is another original text that is also dolorem est"];\nvar check_texts = ["I plagiarised lorem ipsum dolorem est and I reckon I can get away with it","I didn\'t do lorem est this time"];\n\ncopyfind(src_texts, check_texts, options, function(err, data) {\n\tif (err) \n\t\tthrow "Failed to compare: " + err.toString();\n\n\tif (!data.matches.length)\n\t\treturn false; // no comparison found on any text\n\n    for (var l=0; l<src_texts.length; l++) {\n        for (var r=0; r<check_texts.length; r++) {\n        \tfor (var i=0; i<data.matches[l][r].length; i++) {\n        \t\tvar match = data.matches[l][r][i]; \n        \t\tvar orig_text = src_texts[l].substr(match.textL.pos, match.textL.length);\n        \t\tvar copied_text = check_texts[r].substr(match.textR.pos, match.textR.length);\n        \t\tconsole.log("Match found: #["+l+"]\\n" + orig_text + "\\nvs. #["+r+"]\\n" + copied_text + "\\nat position : " + match.textR.pos);\n        \t}\n        }\n\t}\n});\n\n```\n\n### Example 3. Render html reports\n```\nvar copyfind = require(\'pl-copyfind\');\n...\nvar options = { bBuildReport:  true }; \nvar src_text = "original text is here. lorem ipsum dolorem est";\nvar check_text = "I plagiarised lorem ipsum dolorem est and I reckon I can get away with it";\n\ncopyfind(src_texts, check_text, options, function(err, data) {\n\tif (err) \n\t\tthrow "Failed to compare: " + err.toString();\n    alert(data.html);\n});\n\n```\n\n### Example 4. Cache results for faster re-comparisons\n```\nvar copyfind = require(\'pl-copyfind\');\n...\nvar options = {  }; \nvar src_text = "original text is here. lorem ipsum dolorem est";\nvar check_text1 = "I plagiarised lorem ipsum dolorem est and I reckon I can get away with  with it";\nvar check_text2 = "Another plagiarised lorem ipsum dolorem est and I reckon I can get away with it";\n\ncopyfind(src_texts, check_text1, options, function(err, data) {\n\tif (err) \n\t\tthrow "Failed to compare: " + err.toString();\n    alert("execution took " + data.executionTime + " ms");\n    options.hashesL = data.hashesL; // save the hashdata. You *could* store this in a file cache too\n});\n\n// re-uses hashesL for better performance\ncopyfind(src_texts, check_text2, options, function(err, data) {\n\tif (err) \n\t\tthrow "Failed to compare: " + err.toString();\n    alert("execution took " + data.executionTime + " ms");\n});\n```\n\n\nLicensing:\n---------\n\nThis module and all its source is licensed under GPL, which is the original licensing of WCopyFind/CopyFind source. The license file can be found at [https://github.com/cmroanirgo/pl-copyfind/blob/master/LICENSE.md].\n\nPlease note that if you *use* this library, as-is, then your project need not be subject to what is commonly called \'GPL cancer\'. It is only if you embrace and extend the module that you must also release your source code, also under a GPL license.\nHowever, as all things go, it would be appreciated if attribution for the work done in this project was acknowledged in your source and information pages.\n\n\n\n\n\n\n\n\n',
+17 silly publish   readmeFilename: 'README.md',
+17 silly publish   gitHead: '8092c0ef0cf504c08eb0bcfbe3c6f576367d20d7',
+17 silly publish   bugs: { url: 'https://github.com/cmroanirgo/pl-copyfind/issues' },
+17 silly publish   homepage: 'https://github.com/cmroanirgo/pl-copyfind#readme',
+17 silly publish   _id: 'pl-copyfind@0.9.2',
+17 silly publish   _shasum: '94da8936983312b46c3e011923ba6a962f959da9',
+17 silly publish   _from: '.' }
+18 verbose getPublishConfig undefined
+19 silly mapToRegistry name pl-copyfind
+20 silly mapToRegistry using default registry
+21 silly mapToRegistry registry https://registry.npmjs.org/
+22 silly mapToRegistry uri https://registry.npmjs.org/pl-copyfind
+23 verbose publish registryBase https://registry.npmjs.org/
+24 silly publish uploading /Users/craig/.npm/pl-copyfind/0.9.2/package.tgz
+25 verbose request uri https://registry.npmjs.org/pl-copyfind
+26 verbose request sending authorization for write operation
+27 info attempt registry request try #1 at 2:42:29 PM
+28 verbose request using bearer token for auth
+29 verbose request id c93b6c37737625e1
+30 http request PUT https://registry.npmjs.org/pl-copyfind
+31 http 403 https://registry.npmjs.org/pl-copyfind
+32 verbose headers { 'content-type': 'application/json',
+32 verbose headers   'cache-control': 'max-age=300',
+32 verbose headers   'content-length': '95',
+32 verbose headers   'accept-ranges': 'bytes',
+32 verbose headers   date: 'Sun, 28 Feb 2016 03:42:31 GMT',
+32 verbose headers   via: '1.1 varnish',
+32 verbose headers   connection: 'keep-alive',
+32 verbose headers   'x-served-by': 'cache-mel6521-MEL',
+32 verbose headers   'x-cache': 'MISS',
+32 verbose headers   'x-cache-hits': '0',
+32 verbose headers   'x-timer': 'S1456630950.249285,VS0,VE1189' }
+33 verbose request invalidating /Users/craig/.npm/registry.npmjs.org/pl-copyfind on PUT
+34 error publish Failed PUT 403
+35 verbose stack Error: "You cannot publish over the previously published version 0.9.2." : pl-copyfind
+35 verbose stack     at makeError (/usr/local/lib/node_modules/npm/node_modules/npm-registry-client/lib/request.js:264:12)
+35 verbose stack     at CachingRegistryClient.<anonymous> (/usr/local/lib/node_modules/npm/node_modules/npm-registry-client/lib/request.js:252:14)
+35 verbose stack     at Request._callback (/usr/local/lib/node_modules/npm/node_modules/npm-registry-client/lib/request.js:172:14)
+35 verbose stack     at Request.self.callback (/usr/local/lib/node_modules/npm/node_modules/request/request.js:198:22)
+35 verbose stack     at emitTwo (events.js:87:13)
+35 verbose stack     at Request.emit (events.js:172:7)
+35 verbose stack     at Request.<anonymous> (/usr/local/lib/node_modules/npm/node_modules/request/request.js:1082:10)
+35 verbose stack     at emitOne (events.js:82:20)
+35 verbose stack     at Request.emit (events.js:169:7)
+35 verbose stack     at IncomingMessage.<anonymous> (/usr/local/lib/node_modules/npm/node_modules/request/request.js:1009:12)
+36 verbose statusCode 403
+37 verbose pkgid pl-copyfind
+38 verbose cwd /Users/craig/web/src/pl-copyfind
+39 error Darwin 14.5.0
+40 error argv "/usr/local/bin/node" "/usr/local/bin/npm" "publish"
+41 error node v4.3.1
+42 error npm  v2.14.12
+43 error code E403
+44 error "You cannot publish over the previously published version 0.9.2." : pl-copyfind
+45 error If you need help, you may report this error at:
+45 error     <https://github.com/npm/npm/issues>
+46 verbose exit [ 1, true ]
