@@ -48,14 +48,15 @@ textarea { height: 350px; margin:1em 0; width:100%}
 <script>
 var copyfind = require("pl-copyfind");
 var demo = require("demo");
+var pjson = require("metadata");
 
 $(function() {
 	console.log("initialising demo...");
-
 	var source = {
 		titleL:'',
 		titleR:''
 	}
+
 
 	function handleFileSelect(subselector) {
 		var file = $("#files"+subselector)[0].files[0];
@@ -189,6 +190,7 @@ $(function() {
 
 	$(document).on('change', '#filesL', function() { handleFileSelect('L'); });
 	$(document).on('change', '#filesR', function() { handleFileSelect('R'); });
+	$("body").append("[v" + pjson.version + "]");
 
 	$('textarea').on('change keyup paste',updateCompareBtnState);
 	$('#urlL-btn').click(function(evt) { loadurl('L'); evt.preventDefault();});

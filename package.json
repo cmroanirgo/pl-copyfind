@@ -1,10 +1,9 @@
 {
   "author": {
-    "name": "Craig Monro",
-    "email": "cmroanirgo@gmail.com"
+    "name": "Craig Monro"
   },
   "name": "pl-copyfind",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "description": "ideas are based on those found at plagiarism.bloomfieldmedia.com's CopyFind/WCopyFind",
   "main": "index.js",
   "repository": {
@@ -18,7 +17,7 @@
     "underscore": "latest"
   },
   "scripts": {
-    "build:base": "browserify -r underscore -r ./index.js:pl-copyfind -r ./demos/demo.js:demo",
+    "build:base": "browserify -r ./package.json:metadata -r underscore -r ./index.js:pl-copyfind -r ./demos/demo.js:demo",
     "build:debug": "echo building debug... && npm run build:base -s > demos/node-bundle.js",
     "build:release": "echo building release... && npm run build:base -s | uglifyjs --c --m --preamble \"/**\n * Copyright (c) 2016 Craig Monro (kodespace.com)\n * No part of this file may be copied or retransmitted without adhering to the GPL license.\n * This copyright notice may not be removed, without express permission of the copyright holder.\n * https://github.com/cmroanirgo/pl-copyfind/blob/master/LICENSE.md\n */\"> demos/node-bundle.js",
     "build":"npm run build:release -s"

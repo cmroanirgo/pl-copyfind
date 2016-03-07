@@ -686,8 +686,8 @@ var WORD_FILTERED 	= 2;
 		if (brieflen>0) {
 			if (brieflen==1) 
 				return ""; // special case brieflen. (don't show any leadin/lead out)
-			if (bFirst) return "..." + text.slice(-brieflen);
-			if (bLast) return text.slice(0,brieflen) + "...";
+			if (bFirst) return brieflen<(text.length+3) ? "..." + text.slice(-brieflen) : text;
+			if (bLast) return brieflen<(text.length+3) ? text.slice(0,brieflen) + "..." : text;
 			if (text.length<(brieflen*2)) return text;
 			return text.slice(0,brieflen) + "...\n\n\n..." + text.slice(-brieflen);
 		}

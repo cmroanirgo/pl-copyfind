@@ -106,27 +106,32 @@ function fetchUrl(url,callback) {
 function stripHtml(html) 
 {
     // a poor man's way of sanitising html. It makes mistakes, especially when ">" is in an attribute
-    html = html.replace(/\r/g, '').replace(/\t{2,}/g, '\t').replace(/\n/g, ' '); // make it all one big line, space delimited rather than new lines
+    html = html.replace(/\r/g, '').replace(/\t{2,}/g, '\t').replace(/\s+\n/g, '\n').replace(/\n{3,}/g, '\n\n'); // make it all one big line, space delimited rather than new lines
     html = html.replace(/<\!DOCTYPE [^>]*?>/g, ''); // !DOCTYPE
-    html = html.replace(/<!-- .*?-->/g, ''); // remove comments
-    html = html.replace(/<\!\[CDATA\[(.*?)\]\]/g, '$1'); // de-XML-ify
+    html = html.replace(/<!--[\s\S]*?-->/g, ''); // remove comments
+    html = html.replace(/<\!\[CDATA\[([\s\S]*?)\]\]/g, '$1'); // de-XML-ify
     html = html.replace(/<([a-zA-Z]+) [^>]*?\/>/gi, '<$1\/>'); // remove all attributes from self closed elems (eg <img some="noise" /> to <img/>)
     html = html.replace(/<([a-zA-Z]+) [^>]*?>/gi, '<$1>'); // remove all attributes (eg <div some="noise"> to <div>)
-    html = html.replace(/<head.*?<\/head>/gi, ''); // remove all metadata
+    html = html.replace(/<head[\s\S]*?<\/head>/gi, ''); // remove all metadata
     html = html.replace(/<body>/gi, '').replace(/<\/body>/gi,'').replace(/<html>/gi, '').replace(/<\/html>/gi,''); // remove body & html tags
     html = html.replace(/<script[^>]*?\/>/gi, ' '); // remove self closed script tags: < script src="abc" /> 
-    html = html.replace(/<script.*?<\/script>/gi, ' '); // remove inline scripts: < script type="...">...</ script>
-    html = html.replace(/<noscript.*?<\/noscript>/gi, ''); // remove noscript
-    html = html.replace(/<canvas.*?<\/canvas>/gi, ' '); // remove canvas
-    html = html.replace(/<style.*?<\/style>/gi, ' '); // remove style
-    html = html.replace(/<footer.*?<\/footer>/gi, ' '). // remove html5 elements that don't contain content
-                replace(/<nav.*?<\/nav>/gi, ' ').
-                replace(/<header.*?<\/header>/gi, ' ').
-                replace(/<figure.*?<\/figure>/gi, ' ');
+    html = html.replace(/<script[\s\S]*?<\/script>/gi, ' '); // remove inline scripts: < script type="...">...</ script>
+    html = html.replace(/<noscript[\s\S]*?<\/noscript>/gi, ''); // remove noscript
+    html = html.replace(/<canvas[\s\S]*?<\/canvas>/gi, ' '); // remove canvas
+    html = html.replace(/<style[\s\S]*?<\/style>/gi, ' '); // remove style
+    html = html.replace(/<footer[\s\S]*?<\/footer>/gi, ' ') // remove html5 elements that don't contain content
+               .replace(/<nav[\s\S]*?<\/nav>/gi, ' ')
+               .replace(/<header[\s\S]*?<\/header>/gi, ' ')
+               .replace(/<figure[\s\S]*?<\/figure>/gi, ' ');
     var tempDiv = $('<div>' + html + '</div>');
-    html = tempDiv.text().replace(/\r/g, '').replace(/ {2,}/g, ' ').replace(/\n{2,}/g, '\n').replace(/\t{2,}/g, '\t');
+    html = tempDiv.text().replace(/\r/g, '')
+                .replace(/\s+\n/g, '\n')
+                .replace(/ {2,}/g, ' ')
+                .replace(/\n{3,}/g, '\n\n')
+                .replace(/\t{2,}/g, '\t').trim();
     return html;
-}
+}   
+
 
 
 
