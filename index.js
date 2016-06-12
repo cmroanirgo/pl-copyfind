@@ -707,6 +707,16 @@ var WORD_FILTERED 	= 2;
 		return text;
 	}
 
+	function _briefMatch(text, matchlen) {
+		// shortens any matched text to something smaller, if it's particularly big
+		if (matchlen>1 && text.length>matchlen*3) {
+			var l = text.slice(0, matchlen);
+			var r = text.slice(-matchlen);
+			return _.escape(l) + "<span class='match-removed'>[ long matching section removed ]</span>" + _.escape(r); 
+		}
+		return _.escape(text);
+	}
+
 	function _buildDoc(text, idbase, side, otherside, matches, options) {
 		if (!matches.length)
 			return '';
@@ -722,6 +732,7 @@ var WORD_FILTERED 	= 2;
 			return a.pos - b.pos;
 		});
 		var brieflen = options.bBriefReport ? (options.bTerseReport ? 1 : options.PhraseLength*3*5) : 0; // = approx 100 words. (*3 is magic number, *5 is approx #letters per word)
+		var matchlen = (options.PhraseLength*3*5) * 2;
 		// split the text into sections
 		var html = []; // it's more efficient this way (as a list of strings there's (apparently) less memory munging on big files)
 		var lastpos = 0;
@@ -733,7 +744,7 @@ var WORD_FILTERED 	= 2;
 			var l = _.escape(_brief(text.slice(lastpos, m.pos),brieflen,lastpos==0, false)); // untreated text to the left of this match
 			var t; // this matches' text
 			if (!m.skipped || m.skipped.length==0) { // easy case. no skipped words
-				t = '<span class="match">' + _.escape(text.slice(m.pos, m.pos+m.length)) + '</span>';
+				t = '<span class="match">' + _briefMatch(text.slice(m.pos, m.pos+m.length), matchlen) + '</span>';
 			} else { // need to further split into skipped words
 				t = [];
 				lastpos = m.pos;
@@ -741,13 +752,13 @@ var WORD_FILTERED 	= 2;
 					var sk = m.skipped[j];
 					ASSERT(sk.pos>=lastpos, "skipped matches are out of order");
 					ASSERT(sk.pos>=m.pos && (sk.pos+sk.length)<=(m.pos+m.length), "sorted matches are outside expected range");
-					var l2 = _.escape(text.slice(lastpos, sk.pos)); // untreated text to the left of this match
+					var l2 = _briefMatch(text.slice(lastpos, sk.pos), matchlen); // untreated text to the left of this match
 					var t2 = '</span><span class="match-partial">' + _.escape(text.slice(sk.pos, sk.pos+sk.length)) + '</span><span class="match">';
 					lastpos = sk.pos + sk.length;
 					t.push(l2 + t2);
 				}
 				if (lastpos < m.pos + m.length)
-					t.push(_.escape(text.slice(lastpos,  m.pos + m.length)));
+					t.push(_briefMatch(text.slice(lastpos,  m.pos + m.length), matchlen));
 
 				t = '<span class="match">' + t.join("") + '</span>'; // flatten the list of strings
 				//remove any empty spans (it can happen)
