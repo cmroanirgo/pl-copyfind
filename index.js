@@ -682,14 +682,27 @@ var WORD_FILTERED 	= 2;
 			throw "ASSERTION! " + text;
 	}
 
+	function _briefKeepRight(str) { // given a text with paragraphs, keep the last para
+		var i = str.lastIndexOf("\n\n");
+		if (i>0)
+			return str.slice(i+2);
+		return str;
+	}
+	function _briefKeepLeft(str) { // give a text with paragraphs, keep the first one
+		var i = str.indexOf("\n\n");
+		if (i>0)
+			return str.slice(0, i);
+		return str;
+
+	}
 	function _brief(text, brieflen, bFirst, bLast) {
 		if (brieflen>0) {
 			if (brieflen==1) 
 				return ""; // special case brieflen. (don't show any leadin/lead out)
-			if (bFirst) return brieflen<(text.length+3) ? "..." + text.slice(-brieflen) : text;
-			if (bLast) return brieflen<(text.length+3) ? text.slice(0,brieflen) + "..." : text;
+			if (bFirst) return brieflen<(text.length+3) ? "..." + _briefKeepRight(text.slice(-brieflen)) : text;
+			if (bLast) return brieflen<(text.length+3) ? _briefKeepLeft(text.slice(0,brieflen)) + "..." : text;
 			if (text.length<(brieflen*2)) return text;
-			return text.slice(0,brieflen) + "...\n\n\n..." + text.slice(-brieflen);
+			return _briefKeepLeft(text.slice(0,brieflen)) + "...\n\n\n..." + _briefKeepRight(text.slice(-brieflen));
 		}
 		return text;
 	}
@@ -741,7 +754,7 @@ var WORD_FILTERED 	= 2;
 				t = t.split('<span class="match"></span>').join("");
 			}
 			//wrap this match in an anchor, pointing to the 'other side' (it will do the same in return)
-			t = '<a href="#'+idbase+otherside+m.num + '" id="'+idbase+side + m.num + '">' + t + '</a>';
+			t = '<a href="#'+idbase+otherside+m.num + '" id="'+idbase+side + m.num + '" data-match="'+m.num+'">' + t + '</a>';
 			html.push(l + t);
 
 			lastpos = m.pos+m.length;
@@ -763,11 +776,17 @@ var WORD_FILTERED 	= 2;
 		var matches = data.matches[docL.docNum][docR.docNum];
 		if (matches.length==0)
 			return '';// nothing matched
+		var numWords = 0;
+		for (var i=0; i<matches.length; i++) {
+			var match = matches[i]["textL"]; 
+			numWords += match.wordCount;
+		}
 		var leftHtml  = _buildDoc(textL[docL.docNum], idbase, 'L', 'R', matches, options); 
 		var rightHtml = _buildDoc(textR[docR.docNum], idbase, 'R', 'L', matches, options);
 		var html = "";
 		if (textL.length>1 || textR.length>1)
 			html += "\n\n<div class='doc-container'><h2>Comparison results of #" + docL.docNum + " and #"+docR.docNum+"</h2>\n";
+		html += "<div class='stats'>"+numWords+' Words in '+matches.length+" incidents</div>\n";
 		html += leftHtml + rightHtml +
 					"\n";
 		if (textL.length>1 || textR.length>1)

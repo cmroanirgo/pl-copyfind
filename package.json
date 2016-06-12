@@ -3,7 +3,7 @@
     "name": "Craig Monro"
   },
   "name": "pl-copyfind",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "description": "ideas are based on those found at plagiarism.bloomfieldmedia.com's CopyFind/WCopyFind",
   "main": "index.js",
   "repository": {
