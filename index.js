@@ -23,11 +23,12 @@
 
 "use strict";
 
-var _ = require("underscore");
+var _ = require("./lib/not_");
 var wordlib = require("./lib/words");
 var TextReader = require("./lib/textreader");
 
 ;(function() {
+	_.escape = _.htmlEncode;
 
 	var root           = this;
 	var previous_exports = root.copyfind;
@@ -820,7 +821,7 @@ var WORD_FILTERED 	= 2;
 		    options = {};
 		}
 
-		_.defaults(options, defaultOptions); 
+		options = _.extend({}, defaultOptions, options); 
 
 		// turn sources into an array
 		var singleDimensionedParams = _.isString(textL) && _.isString(textR);

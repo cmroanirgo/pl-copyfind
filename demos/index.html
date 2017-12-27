@@ -12,15 +12,16 @@
 <meta charset="utf-8">
 <title>Copy Find </title>
 <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-<link rel="stylesheet" href="pure.css">
+<link rel="stylesheet" href="roan.min.css">
 <link rel="stylesheet" href="jquery.modal.css">
 <style>
 .column { margin:1em 2%; width:45%; box-sizing:border-box; position:relative; display: inline-block; text-align: left}
 #compare-form { text-align:center;}
-input[type="text"] {  margin:1em 0 1em 0; width:80%;}
+input[type="text"] {  width:80%;}
 input[type="file"] {  margin:0; width:80%;}
 textarea { height: 350px; margin:1em 0; width:100%}
-.button-xlarge { margin-top: margin-top:1em;font-size:125%;}
+#options-form { width:100%;}
+#options-form #save-options-btn { line-height: 5em;}
 #options-btn { margin-left:2.5%;}
 #results { text-align:center;width:80%;height:90%;}
 .doc { 
@@ -221,7 +222,7 @@ $(function() {
 				{ $("#results").html("Failed to compare: " + err.toString()).modal(); return; }
 
 			var results = data.html;
-			var btnhtml = '<br><a id="save-results" href="#" class="pure-button pure-button-primary">Save Results</a><br>\n'+
+			var btnhtml = '<br><a id="save-results" href="#" >Save Results</a><br>\n'+
 						'<small>Comparison took ' +data.executionTime+ ' milliseconds<small>';
 		  	$("#results").html(data.html.length ? results+btnhtml : "(No results)").modal();
 		  	$("#save-results").click(function() {
@@ -260,54 +261,51 @@ $(function() {
 	<p><small>You can also save this to your computer using "File> Save As" and "Webpage complete" in order to use it offline</small></p>
 
 <div id="options-dlg" style="display:none;">
-<form id="options-form" class="pure-form pure-form-stacked" >
-	<fieldset>
-        <legend>Options</legend>
+<form id="options-form" class="stack">
  	<label for="PhraseLength">Shortest Phrase to Match</label><input value="34" id="PhraseLength" type="text">
  	<label for="WordThreshold">Fewest Matches to Report</label><input value="100" id="WordThreshold" type="text">
  	<label for="MismatchTolerance">#Most Imperfections to Allow</label><input value="6" id="MismatchTolerance" type="text">
  	<label for="MismatchPercentage">Minimum % of Matching Words</label><input value="80" id="MismatchPercentage" type="text">
 
-    <label for="bBriefReport" class="pure-checkbox">
+    <label for="bBriefReport" >
         <input id="bBriefReport" type="checkbox" checked> Brief Report
     </label>
-    <label for="bIgnoreCase" class="pure-checkbox">
+    <label for="bIgnoreCase" >
         <input id="bIgnoreCase" type="checkbox" checked> Ignore Case
     </label>
 
-    <label for="bIgnorePunctuation" class="pure-checkbox" class="pure-checkbox">
+    <label for="bIgnorePunctuation"  >
         <input id="bIgnorePunctuation" type="checkbox" checked> Ignore Punctuation 
     </label>
-    <label for="bIgnoreOuterPunctuation" class="pure-checkbox">
+    <label for="bIgnoreOuterPunctuation" >
         <input id="bIgnoreOuterPunctuation" type="checkbox"> Ignore Outer Punctuation 
     </label>
-    <label for="bSkipLongWords" class="pure-checkbox">
+    <label for="bSkipLongWords" >
         <input id="bSkipLongWords" type="checkbox"> Skip Long Words 
     </label>
  	<label for="SkipLength">Long Word Length</label><input value="20" id="SkipLength" type="text">
 
-    <label for="bSkipNonwords" class="pure-checkbox">
+    <label for="bSkipNonwords" >
         <input id="bSkipNonwords" type="checkbox"> Skip Non-Words 
     </label>
-	<a id="save-options-btn" href="#" class="pure-button pure-button-primary">Save Options</a>
-    </fieldset>
+	<a id="save-options-btn" href="#" class="button primary">Save Options</a>
 </form>
 </div>
 
-<a id="options-btn" href="#options-dlg" rel="modal:open" class="pure-button">Options</a>
-<form id="compare-form" class="pure-form">
+<a id="options-btn" href="#options-dlg" rel="modal:open" class="button info">Options</a>
+<form id="compare-form"  class="natural" >
 	<div class="column" id="columnL">
-	    <input id="urlL" type="text" placeholder="http://website.com/page.php"><a id="urlL-btn" href="#" class="pure-button">Load</a>
+	    <input id="urlL" type="text" placeholder="http://website.com/page.php"><a id="urlL-btn" href="#" class="button">Load</a>
 		<input type="file" id="filesL"  />
 	    <textarea id="textL" placeholder="Paste text here, or load txt/html file"></textarea>
 	</div>
 	<div class="column" id="columnR">
-	    <input id="urlR" type="text" placeholder="http://website2.com/page.php"><a id="urlR-btn" href="#" class="pure-button">Load</a>
+	    <input id="urlR" type="text" placeholder="http://website2.com/page.php"><a id="urlR-btn" href="#"  class="button">Load</a>
 		<input type="file" id="filesR"  />
 	    <textarea id="textR" placeholder="Paste text here, or load txt/html file"></textarea>
 	</div>
 
-    <button type="submit" id="compare-btn" class="pure-button pure-button-primary button-xlarge">Compare</button>
+    <button type="submit" id="compare-btn" class="lg">Compare</button>
 	<div id="spinner"><p><img src="spinner.gif"/></p></div>
 </form>
 <div id="results">

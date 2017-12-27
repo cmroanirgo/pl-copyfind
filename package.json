@@ -3,7 +3,7 @@
     "name": "Craig Monro"
   },
   "name": "pl-copyfind",
-  "version": "0.9.5",
+  "version": "0.10.1",
   "description": "ideas are based on those found at plagiarism.bloomfieldmedia.com's CopyFind/WCopyFind",
   "main": "index.js",
   "repository": {
@@ -14,7 +14,6 @@
     "lib": "./lib"
   },
   "dependencies": {
-    "underscore": "latest"
   },
   "scripts": {
     "build:base": "browserify -r ./package.json:metadata -r underscore -r ./index.js:pl-copyfind -r ./demos/demo.js:demo",
